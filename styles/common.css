@@ -1,3 +1,12 @@
+:root {
+    --primary-color: #4CAF50;
+    --secondary-color: #2196F3;
+    --background-color: #ffffff;
+    --text-color: #333333;
+    --border-radius: 8px;
+    --spacing: 16px;
+}
+
 /* Common styles for SweetDill extension */
 
 .sweetdill-container {

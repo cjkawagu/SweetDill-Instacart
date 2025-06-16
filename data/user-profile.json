@@ -1,0 +1,11 @@
+{
+    "userId": "user123",
+    "zipcode": "91320",
+    "preferences": {
+        "maxDistance": 15,
+        "preferredRetailers": ["Ralphs", "Vons", "Albertsons"],
+        "priceAlertThreshold": 0.10
+    },
+    "savedItems": [],
+    "priceHistory": {}
+} 

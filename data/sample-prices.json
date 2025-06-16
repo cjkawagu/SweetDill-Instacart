@@ -1,0 +1,98 @@
+{
+    "productId": "sunnyd-citrus-punch-tangy-64oz",
+    "productName": "SunnyD Citrus Punch Tangy",
+    "currentPrice": 3.29,
+    "retailers": [
+        {
+            "id": "ralphs-91320",
+            "name": "Ralphs",
+            "distance": "0.5 miles",
+            "price": 3.29,
+            "inStock": true,
+            "lastUpdated": "2024-03-20T10:00:00Z"
+        },
+        {
+            "id": "vons-91320",
+            "name": "Vons",
+            "distance": "1.2 miles",
+            "price": 3.49,
+            "inStock": true,
+            "lastUpdated": "2024-03-20T10:00:00Z"
+        },
+        {
+            "id": "albertsons-91320",
+            "name": "Albertsons",
+            "distance": "2.1 miles",
+            "price": 2.99,
+            "inStock": true,
+            "lastUpdated": "2024-03-20T10:00:00Z"
+        },
+        {
+            "id": "safeway-91320",
+            "name": "Safeway",
+            "distance": "3.5 miles",
+            "price": 3.59,
+            "inStock": true,
+            "lastUpdated": "2024-03-20T10:00:00Z"
+        },
+        {
+            "id": "target-91320",
+            "name": "Target",
+            "distance": "4.8 miles",
+            "price": 3.19,
+            "inStock": true,
+            "lastUpdated": "2024-03-20T10:00:00Z"
+        }
+    ],
+    "coupons": [
+        {
+            "id": "sunnyd-refresh-2024",
+            "code": "SUNNYDTASTE",
+            "description": "15% off SunnyD Citrus Punch",
+            "aiSummary": "Enjoy 15% off your next purchase of SunnyD Citrus Punch Tangy. A refreshing deal!",
+            "expires": "2024-05-31",
+            "minimumPurchase": 10.00,
+            "retailers": ["ralphs-91320", "vons-91320", "target-91320"]
+        },
+        {
+            "id": "first-beverage-order",
+            "code": "DRINKUP20",
+            "description": "20% off your first beverage order",
+            "aiSummary": "New to Instacart beverages? Get 20% off your first drink order over $20, including SunnyD.",
+            "expires": "2024-12-31",
+            "minimumPurchase": 20.00,
+            "retailers": ["ralphs-91320", "vons-91320", "albertsons-91320", "safeway-91320", "target-91320"]
+        },
+        {
+            "id": "bulk-beverage-deal",
+            "code": "BULKDRINK10",
+            "description": "10% off when you buy 2+ SunnyD",
+            "aiSummary": "Stock up and save! Get 10% off when you purchase two or more SunnyD Citrus Punch Tangy bottles.",
+            "expires": "2024-04-15",
+            "minimumPurchase": 15.00,
+            "retailers": ["albertsons-91320", "safeway-91320"]
+        }
+    ],
+    "priceHistory": [
+        {
+            "date": "2024-03-13",
+            "prices": {
+                "ralphs-91320": 3.19,
+                "vons-91320": 3.39,
+                "albertsons-91320": 2.89,
+                "safeway-91320": 3.49,
+                "target-91320": 3.09
+            }
+        },
+        {
+            "date": "2024-03-06",
+            "prices": {
+                "ralphs-91320": 3.09,
+                "vons-91320": 3.29,
+                "albertsons-91320": 2.79,
+                "safeway-91320": 3.39,
+                "target-91320": 2.99
+            }
+        }
+    ]
+} 

@@ -6,78 +6,71 @@ class SweetDillBackground {
     }
 
     initialize() {
-        // Listen for messages from content script and popup
+        // Listen for messages from content script
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            console.log('SweetDill Background: Received message:', request.action);
             switch (request.action) {
-                case 'productPageDetected':
-                    this.handleProductPageDetected(request.productId);
-                    break;
-                case 'getPriceHistory':
-                    this.getPriceHistory(request.productId).then(sendResponse);
-                    return true; // Required for async response
-                case 'getPriceComparison':
-                    this.getPriceComparison(request.productId).then(sendResponse);
-                    return true; // Required for async response
+                case 'getNearbyRetailers':
+                    console.log('SweetDill Background: Getting nearby retailers for zipcode:', request.zipcode);
+                    this.getNearbyRetailers(request.zipcode, sender).then(sendResponse);
+                    return true;
+                case 'searchProductPrices':
+                    console.log('SweetDill Background: Searching product prices for:', request.productSlug);
+                    this.searchProductPrices(request.productSlug, request.retailers, sender).then(sendResponse);
+                    return true;
             }
         });
     }
 
-    async handleProductPageDetected(productId) {
-        // When a product page is detected, fetch and cache the price data
+    async getNearbyRetailers(zipcode, sender) {
         try {
-            const priceData = await this.fetchPriceData(productId);
-            await this.cachePriceData(productId, priceData);
-        } catch (error) {
-            console.error('SweetDill: Error handling product page:', error);
-        }
-    }
+            console.log('SweetDill Background: Executing script to get retailers...');
+            // Execute content script to extract retailer information from the current page
+            const results = await chrome.scripting.executeScript({
+                target: { tabId: sender.tab.id },
+                func: () => {
+                    console.log('SweetDill Background Script: Getting current retailer info...');
+                    // Get the current retailer info from the page
+                    const currentRetailer = {
+                        id: window.location.pathname.split('/')[2],
+                        name: document.querySelector('[data-testid="store-name"]')?.textContent.trim(),
+                        distance: 'Current Store'
+                    };
+                    console.log('SweetDill Background Script: Current retailer:', currentRetailer);
 
-    async fetchPriceData(productId) {
-        // TODO: Implement API call to fetch price data
-        // This will be implemented when we have the backend API ready
-        return {
-            currentPrice: null,
-            cheapestPrice: null,
-            averagePrice: null,
-            priceHistory: []
-        };
-    }
+                    // Get other retailers from the store switcher
+                    console.log('SweetDill Background Script: Getting store switcher...');
+                    const storeSwitcher = document.querySelector('[data-testid="store-switcher"]');
+                    console.log('SweetDill Background Script: Store switcher found:', !!storeSwitcher);
+                    
+                    const retailers = Array.from(storeSwitcher?.querySelectorAll('[data-testid="store-card"]') || [])
+                        .map(store => {
+                            const name = store.querySelector('[data-testid="store-name"]')?.textContent.trim();
+                            const distance = store.querySelector('[data-testid="store-distance"]')?.textContent.trim();
+                            const id = store.getAttribute('data-store-id') || 
+                                     store.querySelector('a')?.href?.match(/\/stores\/([^\/]+)/)?.[1];
+                            
+                            return {
+                                id,
+                                name,
+                                distance
+                            };
+                        })
+                        .filter(retailer => retailer.id && retailer.name);
 
-    async cachePriceData(productId, priceData) {
-        // Store price data in chrome.storage
-        try {
-            await chrome.storage.local.set({
-                [`price_${productId}`]: {
-                    data: priceData,
-                    timestamp: Date.now()
+                    console.log('SweetDill Background Script: Found retailers:', retailers);
+                    // Add current retailer to the list
+                    return [currentRetailer, ...retailers].slice(0, 10);
                 }
             });
-        } catch (error) {
-            console.error('SweetDill: Error caching price data:', error);
-        }
-    }
 
-    async getPriceHistory(productId) {
-        try {
-            // First check cache
-            const cached = await this.getCachedPriceData(productId);
-            if (cached) {
-                return {
-                    success: true,
-                    data: cached.priceHistory
-                };
-            }
-
-            // If not in cache, fetch new data
-            const priceData = await this.fetchPriceData(productId);
-            await this.cachePriceData(productId, priceData);
-            
+            console.log('SweetDill Background: Got retailer results:', results[0].result);
             return {
                 success: true,
-                data: priceData.priceHistory
+                retailers: results[0].result
             };
         } catch (error) {
-            console.error('SweetDill: Error getting price history:', error);
+            console.error('SweetDill Background: Error getting nearby retailers:', error);
             return {
                 success: false,
                 error: error.message
@@ -85,59 +78,71 @@ class SweetDillBackground {
         }
     }
 
-    async getPriceComparison(productId) {
+    async searchProductPrices(productSlug, retailers, sender) {
         try {
-            // First check cache
-            const cached = await this.getCachedPriceData(productId);
-            if (cached) {
-                return {
-                    success: true,
-                    data: {
-                        currentPrice: cached.currentPrice,
-                        cheapestPrice: cached.cheapestPrice,
-                        averagePrice: cached.averagePrice
+            console.log('SweetDill Background: Executing script to get product prices...');
+            // Execute content script to extract price information from the current page
+            const results = await chrome.scripting.executeScript({
+                target: { tabId: sender.tab.id },
+                func: (retailers) => {
+                    console.log('SweetDill Background Script: Getting GTM data...');
+                    // Get the current product data from GTM
+                    const gtmData = window.dataLayer?.find(event => 
+                        event.product_details_page?.page_view
+                    )?.product_details_page?.page_view;
+                    console.log('SweetDill Background Script: GTM data:', gtmData);
+
+                    if (!gtmData) {
+                        console.log('SweetDill Background Script: No GTM data found');
+                        return retailers.map(retailer => ({
+                            retailer,
+                            price: null,
+                            inStock: false
+                        }));
                     }
-                };
-            }
 
-            // If not in cache, fetch new data
-            const priceData = await this.fetchPriceData(productId);
-            await this.cachePriceData(productId, priceData);
-            
+                    // Extract current price and stock info
+                    const currentPrice = parseFloat(gtmData.price?.replace(/[^0-9.]/g, ''));
+                    const currentStock = gtmData.stock_level === 'highly_in_stock';
+                    console.log('SweetDill Background Script: Current price:', currentPrice, 'Current stock:', currentStock);
+
+                    // Map retailers to their prices
+                    const results = retailers.map(retailer => {
+                        // If this is the current retailer, use the current price
+                        if (retailer.id === gtmData.retailer_id) {
+                            return {
+                                retailer,
+                                price: currentPrice,
+                                inStock: currentStock
+                            };
+                        }
+
+                        // For other retailers, we'll need to make an API call
+                        // This will be implemented in the next step
+                        return {
+                            retailer,
+                            price: null,
+                            inStock: false
+                        };
+                    });
+
+                    console.log('SweetDill Background Script: Price results:', results);
+                    return results;
+                },
+                args: [retailers]
+            });
+
+            console.log('SweetDill Background: Got price results:', results[0].result);
             return {
                 success: true,
-                data: {
-                    currentPrice: priceData.currentPrice,
-                    cheapestPrice: priceData.cheapestPrice,
-                    averagePrice: priceData.averagePrice
-                }
+                results: results[0].result
             };
         } catch (error) {
-            console.error('SweetDill: Error getting price comparison:', error);
+            console.error('SweetDill Background: Error searching product prices:', error);
             return {
                 success: false,
                 error: error.message
             };
-        }
-    }
-
-    async getCachedPriceData(productId) {
-        try {
-            const result = await chrome.storage.local.get(`price_${productId}`);
-            const cached = result[`price_${productId}`];
-            
-            if (!cached) return null;
-
-            // Check if cache is still valid (less than 1 hour old)
-            const cacheAge = Date.now() - cached.timestamp;
-            if (cacheAge > 3600000) { // 1 hour in milliseconds
-                return null;
-            }
-
-            return cached.data;
-        } catch (error) {
-            console.error('SweetDill: Error getting cached price data:', error);
-            return null;
         }
     }
 }

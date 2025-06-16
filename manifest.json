@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
     "https://*.instacart.com/*"
@@ -28,7 +29,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["content/sidebar.html", "assets/*"],
+      "resources": ["data/*", "assets/*"],
       "matches": ["https://*.instacart.com/*"]
     }
   ]
