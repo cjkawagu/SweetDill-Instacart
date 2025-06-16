@@ -1,0 +1,102 @@
+/* Sidebar styles for SweetDill extension */
+
+.sweetdill-sidebar {
+    position: fixed;
+    top: 0;
+    right: -400px; /* Start hidden */
+    width: 400px;
+    max-width: 20vw;
+    height: 100vh;
+    background: white;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    transition: right 0.3s ease-in-out;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.sweetdill-sidebar.open {
+    right: 0;
+}
+
+.sweetdill-toggle {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    background: var(--primary-color);
+    color: white;
+    padding: 10px;
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    z-index: 9998;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sweetdill-toggle:hover {
+    background: #43A047;
+}
+
+.sweetdill-toggle-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sweetdill-toggle-text {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.sweetdill-sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sweetdill-sidebar-title {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 20px;
+}
+
+.sweetdill-close-button {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.sweetdill-close-button:hover {
+    color: #333;
+}
+
+.sweetdill-sidebar-content {
+    padding: 16px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sweetdill-sidebar {
+        width: 100%;
+        max-width: none;
+    }
+
+    .sweetdill-toggle-text {
+        display: none;
+    }
+} 
