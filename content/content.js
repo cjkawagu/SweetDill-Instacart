@@ -18,6 +18,7 @@ class SweetDillContent {
         // Add event listeners
         if (this.toggle) {
             this.toggle.addEventListener('click', () => this.toggleSidebar());
+            this.makeToggleDraggable();
         }
         if (this.closeButton) {
             this.closeButton.addEventListener('click', () => this.closeSidebar());
@@ -25,6 +26,103 @@ class SweetDillContent {
 
         // Initial check if we're on a product page
         this.checkProductPage();
+    }
+
+    async makeToggleDraggable() {
+        const toggleButton = this.toggle;
+        if (!toggleButton) return;
+
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        // Load saved position
+        chrome.storage.sync.get(['sweetdillTogglePosition'], (result) => {
+            if (result.sweetdillTogglePosition) {
+                const { left, top } = result.sweetdillTogglePosition;
+                toggleButton.style.left = `${left}px`;
+                toggleButton.style.top = `${top}px`;
+                toggleButton.style.right = 'auto'; // Disable right positioning
+                toggleButton.style.bottom = 'auto'; // Disable bottom positioning
+            } else {
+                // Set initial position if not saved, and store it
+                toggleButton.style.right = '20px';
+                toggleButton.style.bottom = '20px';
+                toggleButton.style.left = 'auto';
+                toggleButton.style.top = 'auto';
+                // Save the initial position once rendered
+                setTimeout(() => {
+                    chrome.storage.sync.set({
+                        sweetdillTogglePosition: {
+                            left: toggleButton.offsetLeft,
+                            top: toggleButton.offsetTop
+                        }
+                    });
+                }, 500); // Give some time for rendering
+            }
+        });
+
+        toggleButton.addEventListener('mousedown', (e) => {
+            // Only allow dragging with the left mouse button
+            if (e.button !== 0) return;
+
+            // Prevent sidebar from toggling when starting a drag
+            e.stopPropagation();
+            e.preventDefault(); // Prevent default drag behavior
+
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = toggleButton.offsetLeft;
+            initialTop = toggleButton.offsetTop;
+
+            // Set cursor to 'grabbing' during drag
+            toggleButton.style.cursor = 'grabbing';
+
+            // Add a class to body to prevent text selection during drag
+            document.body.classList.add('sweetdill-no-select');
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            let newLeft = initialLeft + dx;
+            let newTop = initialTop + dy;
+
+            // Keep button within viewport bounds
+            newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - toggleButton.offsetWidth));
+            newTop = Math.max(0, Math.min(newTop, window.innerHeight - toggleButton.offsetHeight));
+
+            toggleButton.style.left = `${newLeft}px`;
+            toggleButton.style.top = `${newTop}px`;
+
+            // Prevent text selection during drag
+            e.preventDefault();
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+
+            isDragging = false;
+            // Save new position
+            chrome.storage.sync.set({
+                sweetdillTogglePosition: {
+                    left: toggleButton.offsetLeft,
+                    top: toggleButton.offsetTop
+                }
+            });
+
+            // Reset cursor
+            toggleButton.style.cursor = 'grab';
+
+            // Remove no-select class
+            document.body.classList.remove('sweetdill-no-select');
+        });
+
+        // Set initial cursor style
+        toggleButton.style.cursor = 'grab';
     }
 
     createSidebar() {
@@ -60,6 +158,7 @@ class SweetDillContent {
                                 <h2 id="product-name">Loading...</h2>
                                 <div class="current-price-inline">
                                     <span id="current-price-value">Loading...</span>
+                                    <span id="current-deal-indicator"></span>
                                 </div>
                             </div>
                         </div>
@@ -131,7 +230,14 @@ class SweetDillContent {
             }
         }
         if (currentPriceElement) {
-            currentPriceElement.textContent = currentPrice ? this.formatPrice(currentPrice) : 'Price Not Found';
+            currentPriceElement.textContent = this.formatPrice(currentPrice);
+        }
+
+        const currentDealIndicatorElement = document.getElementById('current-deal-indicator');
+        if (currentDealIndicatorElement) {
+            // Initial state, will be updated by updatePriceComparison
+            currentDealIndicatorElement.className = 'deal-rating-box meh';
+            currentDealIndicatorElement.innerHTML = '❓ Loading...';
         }
 
         // Store current price for later comparison
@@ -206,16 +312,45 @@ class SweetDillContent {
         }).format(price);
     }
 
-    getDealRating(originalPrice, competitorPrice) {
-        if (originalPrice === null || competitorPrice === null) {
+    // Overall deal rating for the current Instacart product
+    getOverallDealRating(currentInstacartPrice, cheapestOverallPrice, averageOverallPrice) {
+        if (currentInstacartPrice === null || cheapestOverallPrice === null || averageOverallPrice === null) {
             return { dealType: 'Unknown', colorClass: 'unknown', emoji: '❓' };
         }
 
-        const percentageDifference = ((originalPrice - competitorPrice) / originalPrice) * 100;
+        const SWEET_THRESHOLD_PERCENT_FROM_CHEAPEST = 0.05; // within 5% of cheapest
+        const MEH_THRESHOLD_PERCENT_DEVIATION_FROM_AVERAGE = 0.15; // within 15% of average
 
-        if (percentageDifference >= 20) {
+        // Sweet Deal: Current price is best or almost best (within X% of cheapest) AND significantly below average
+        if (currentInstacartPrice <= cheapestOverallPrice * (1 + SWEET_THRESHOLD_PERCENT_FROM_CHEAPEST) && 
+            currentInstacartPrice < averageOverallPrice * (1 - 0.10)) { // e.g., 10% below average
             return { dealType: 'Sweet', colorClass: 'sweet', emoji: '🍯' };
-        } else if (percentageDifference > 0) { // Cheaper but less than 20%
+        }
+
+        // Meh Deal: Current price is within a normal range (e.g., +/- 15% of average)
+        if (currentInstacartPrice >= averageOverallPrice * (1 - MEH_THRESHOLD_PERCENT_DEVIATION_FROM_AVERAGE) && 
+            currentInstacartPrice <= averageOverallPrice * (1 + MEH_THRESHOLD_PERCENT_DEVIATION_FROM_AVERAGE)) {
+            return { dealType: 'Meh', colorClass: 'meh', emoji: '😐' };
+        }
+
+        // Sour Deal: Current price is more expensive than normal
+        return { dealType: 'Sour', colorClass: 'sour', emoji: '🍋' };
+    }
+
+    // Deal rating for an individual retailer's price compared to the current Instacart price
+    getDealRatingForRetailer(retailerPrice, currentInstacartPrice) {
+        if (retailerPrice === null || currentInstacartPrice === null) {
+            return { dealType: 'Unknown', colorClass: 'unknown', emoji: '❓' };
+        }
+
+        const SWEET_PERCENT_CHEAPER = 0.20; // 20% cheaper
+        const MEH_PERCENT_DEVIATION = 0.05; // 5% deviation (either cheaper or more expensive)
+
+        const percentageDifference = (currentInstacartPrice - retailerPrice) / currentInstacartPrice;
+
+        if (percentageDifference >= SWEET_PERCENT_CHEAPER) {
+            return { dealType: 'Sweet', colorClass: 'sweet', emoji: '🍯' };
+        } else if (percentageDifference > -MEH_PERCENT_DEVIATION && percentageDifference < MEH_PERCENT_DEVIATION) { // within +/- 5% of current price
             return { dealType: 'Meh', colorClass: 'meh', emoji: '😐' };
         } else {
             return { dealType: 'Sour', colorClass: 'sour', emoji: '🍋' };
@@ -230,18 +365,30 @@ class SweetDillContent {
         }
     }
 
-    async startPriceComparison() {
+    async getNearbyRetailers(zipcode) {
         try {
-            const comparisonContent = document.getElementById('price-comparison-content');
-            if (comparisonContent) {
-                comparisonContent.innerHTML = '<div class="loading-spinner">Searching for prices...</div>';
+            const response = await chrome.runtime.sendMessage({
+                action: 'getNearbyRetailers',
+                zipcode: zipcode
+            });
+
+            if (!response.success) {
+                throw new Error(response.error || 'Failed to get nearby retailers');
             }
 
-            // Load sample data
+            return response.retailers;
+        } catch (error) {
+            console.error('SweetDill: Error getting nearby retailers:', error);
+            throw error;
+        }
+    }
+
+    async searchProductPrices(productSlug, retailers) {
+        try {
             const response = await fetch(chrome.runtime.getURL('data/sample-prices.json'));
             const data = await response.json();
             
-            // Get price results and coupons
+            // Get both price results and coupons
             const priceResults = data.retailers.map(retailer => ({
                 retailer: {
                     id: retailer.id,
@@ -254,6 +401,28 @@ class SweetDillContent {
 
             // Filter coupons for the current product
             const coupons = data.coupons;
+            
+            return {
+                priceResults,
+                coupons
+            };
+        } catch (error) {
+            console.error('SweetDill: Error searching product prices:', error);
+            throw error;
+        }
+    }
+
+    async startPriceComparison(productSlug, zipcode) {
+        try {
+            const comparisonContent = document.getElementById('price-comparison-content');
+            if (comparisonContent) {
+                comparisonContent.innerHTML = '<div class="loading-spinner">Searching for prices...</div>';
+            }
+
+            // Load sample data
+            // No need for zipcode or actual retailers as we are using local JSON
+            // const retailers = await this.getNearbyRetailers(zipcode);
+            const { priceResults, coupons } = await this.searchProductPrices(); // Pass empty or dummy values if needed
             
             this.updatePriceComparison(priceResults, coupons);
         } catch (error) {
@@ -269,7 +438,7 @@ class SweetDillContent {
         const validResults = priceResults.filter(result => result.price !== null);
         validResults.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
 
-        // Determine if a cheaper deal is found
+        // Determine if a cheaper deal is found for the toggle button text
         let cheaperDealFound = false;
         if (this.currentProductPrice !== null && this.currentProductPrice !== undefined) {
             cheaperDealFound = validResults.some(result => parseFloat(result.price) < this.currentProductPrice);
@@ -289,14 +458,33 @@ class SweetDillContent {
             if (this.toggleText) {
                 this.toggleText.textContent = 'Price Compare';
             }
+            // Reset current deal indicator on error
+            const currentDealIndicatorElement = document.getElementById('current-deal-indicator');
+            if (currentDealIndicatorElement) {
+                currentDealIndicatorElement.className = 'deal-rating-box meh';
+                currentDealIndicatorElement.innerHTML = '❓ N/A';
+            }
             return;
+        }
+
+        // Determine overall deal type for current product page price
+        const cheapestOverallPrice = Math.min(this.currentProductPrice, ...validResults.map(r => r.price));
+        const allPrices = [this.currentProductPrice, ...validResults.map(r => r.price)].filter(p => p !== null);
+        const averageOverallPrice = allPrices.reduce((sum, p) => sum + p, 0) / allPrices.length;
+
+        const overallDealRating = this.getOverallDealRating(this.currentProductPrice, cheapestOverallPrice, averageOverallPrice);
+
+        const currentDealIndicatorElement = document.getElementById('current-deal-indicator');
+        if (currentDealIndicatorElement) {
+            currentDealIndicatorElement.className = `deal-rating-box ${overallDealRating.colorClass}`;
+            currentDealIndicatorElement.innerHTML = `${overallDealRating.emoji} ${overallDealRating.dealType} Deal`;
         }
 
         // Create HTML for price comparison
         const priceHtml = (visibleResults) => visibleResults.map(result => {
-            const dealRating = this.getDealRating(this.currentProductPrice, result.price);
+            const dealRatingForRetailer = this.getDealRatingForRetailer(result.price, this.currentProductPrice);
             return `
-            <div class="retailer-price ${result.inStock ? 'in-stock' : 'out-of-stock'}">
+            <div class="retailer-price ${result.inStock ? 'in-stock' : 'out-of-stock'} ${dealRatingForRetailer.colorClass}">
                 <div class="retailer-info">
                     <span class="retailer-name">${result.retailer.name}</span>
                     <span class="retailer-distance">${result.retailer.distance}</span>
@@ -304,8 +492,8 @@ class SweetDillContent {
                 <div class="price-info">
                     <span class="price">${this.formatPrice(result.price)}</span>
                     <span class="stock-status">${result.inStock ? 'In Stock' : 'Out of Stock'}</span>
-                    <div class="deal-rating-box ${dealRating.colorClass}">
-                        ${dealRating.emoji} ${dealRating.dealType} Deal
+                    <div class="deal-rating-box ${dealRatingForRetailer.colorClass}">
+                        ${dealRatingForRetailer.emoji} ${dealRatingForRetailer.dealType} Deal
                     </div>
                     ${result.inStock ? `<div class="retailer-btn-row"><button class="view-button" data-retailer="${result.retailer.id}">View on Instacart</button></div>` : ''}
                 </div>
@@ -356,10 +544,10 @@ class SweetDillContent {
             <div class="price-comparison-section">
                 <h2>Price Comparison</h2>
                 <div id="retailer-list">${priceHtml(initialRetailers)}</div>
-                ${moreRetailersExist ? '<button id="show-all-retailers" class="show-all-button">Show All Retailers</button>' : ''}
+                ${moreRetailersExist ? `<button id="toggle-retailers-button" class="show-all-button">Show All Retailers</button>` : ''}
             </div>
             <div id="coupon-list-container">${couponHtml(initialCoupons)}</div>
-            ${moreCouponsExist ? '<button id="show-all-coupons" class="show-all-button">Show All Coupons</button>' : ''}
+            ${moreCouponsExist ? `<button id="toggle-coupons-button" class="show-all-button">Show All Coupons</button>` : ''}
         `;
 
         // Add event listeners to view buttons
@@ -385,26 +573,30 @@ class SweetDillContent {
             });
         });
 
-        // Add event listener for "Show All Retailers" button
-        const showAllRetailersButton = document.getElementById('show-all-retailers');
-        if (showAllRetailersButton) {
-            showAllRetailersButton.addEventListener('click', () => {
+        // Add event listener for "Show All / Show Less Retailers" button
+        const toggleRetailersButton = document.getElementById('toggle-retailers-button');
+        if (toggleRetailersButton) {
+            let showingAllRetailers = false;
+            toggleRetailersButton.addEventListener('click', () => {
+                showingAllRetailers = !showingAllRetailers;
                 const retailerList = document.getElementById('retailer-list');
                 if (retailerList) {
-                    retailerList.innerHTML = priceHtml(validResults);
-                    showAllRetailersButton.style.display = 'none'; // Hide button after expansion
+                    retailerList.innerHTML = priceHtml(showingAllRetailers ? validResults : initialRetailers);
+                    toggleRetailersButton.textContent = showingAllRetailers ? 'Show Less Retailers' : 'Show All Retailers';
                 }
             });
         }
 
-        // Add event listener for "Show All Coupons" button
-        const showAllCouponsButton = document.getElementById('show-all-coupons');
-        if (showAllCouponsButton) {
-            showAllCouponsButton.addEventListener('click', () => {
+        // Add event listener for "Show All / Show Less Coupons" button
+        const toggleCouponsButton = document.getElementById('toggle-coupons-button');
+        if (toggleCouponsButton) {
+            let showingAllCoupons = false;
+            toggleCouponsButton.addEventListener('click', () => {
+                showingAllCoupons = !showingAllCoupons;
                 const couponListContainer = document.getElementById('coupon-list-container');
                 if (couponListContainer) {
-                    couponListContainer.innerHTML = couponHtml(sortedCoupons);
-                    showAllCouponsButton.style.display = 'none'; // Hide button after expansion
+                    couponListContainer.innerHTML = couponHtml(showingAllCoupons ? sortedCoupons : initialCoupons);
+                    toggleCouponsButton.textContent = showingAllCoupons ? 'Show Less Coupons' : 'Show All Coupons';
                 }
             });
         }
@@ -429,6 +621,11 @@ class SweetDillContent {
         }
         if (this.toggleText) {
             this.toggleText.textContent = 'Price Compare';
+        }
+        const currentDealIndicatorElement = document.getElementById('current-deal-indicator');
+        if (currentDealIndicatorElement) {
+            currentDealIndicatorElement.className = 'deal-rating-box meh';
+            currentDealIndicatorElement.innerHTML = '❓ N/A';
         }
     }
 }

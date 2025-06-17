@@ -1,13 +1,13 @@
 {
     "productId": "sunnyd-citrus-punch-tangy-64oz",
     "productName": "SunnyD Citrus Punch Tangy",
-    "currentPrice": 3.29,
+    "currentPrice": 4.99,
     "retailers": [
         {
             "id": "ralphs-91320",
             "name": "Ralphs",
             "distance": "0.5 miles",
-            "price": 3.29,
+            "price": 3.99,
             "inStock": true,
             "lastUpdated": "2024-03-20T10:00:00Z"
         },
@@ -15,7 +15,7 @@
             "id": "vons-91320",
             "name": "Vons",
             "distance": "1.2 miles",
-            "price": 3.49,
+            "price": 4.59,
             "inStock": true,
             "lastUpdated": "2024-03-20T10:00:00Z"
         },
@@ -23,7 +23,7 @@
             "id": "albertsons-91320",
             "name": "Albertsons",
             "distance": "2.1 miles",
-            "price": 2.99,
+            "price": 4.99,
             "inStock": true,
             "lastUpdated": "2024-03-20T10:00:00Z"
         },
@@ -31,7 +31,7 @@
             "id": "safeway-91320",
             "name": "Safeway",
             "distance": "3.5 miles",
-            "price": 3.59,
+            "price": 5.29,
             "inStock": true,
             "lastUpdated": "2024-03-20T10:00:00Z"
         },
@@ -39,7 +39,7 @@
             "id": "target-91320",
             "name": "Target",
             "distance": "4.8 miles",
-            "price": 3.19,
+            "price": 3.89,
             "inStock": true,
             "lastUpdated": "2024-03-20T10:00:00Z"
         }
@@ -77,21 +77,21 @@
         {
             "date": "2024-03-13",
             "prices": {
-                "ralphs-91320": 3.19,
-                "vons-91320": 3.39,
-                "albertsons-91320": 2.89,
-                "safeway-91320": 3.49,
-                "target-91320": 3.09
+                "ralphs-91320": 4.19,
+                "vons-91320": 4.39,
+                "albertsons-91320": 4.89,
+                "safeway-91320": 5.09,
+                "target-91320": 4.09
             }
         },
         {
             "date": "2024-03-06",
             "prices": {
-                "ralphs-91320": 3.09,
-                "vons-91320": 3.29,
-                "albertsons-91320": 2.79,
-                "safeway-91320": 3.39,
-                "target-91320": 2.99
+                "ralphs-91320": 4.09,
+                "vons-91320": 4.29,
+                "albertsons-91320": 4.79,
+                "safeway-91320": 4.99,
+                "target-91320": 3.99
             }
         }
     ]

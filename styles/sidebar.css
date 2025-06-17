@@ -46,7 +46,7 @@
     color: var(--button-text);
     padding: 10px 14px;
     border-radius: 12px;
-    cursor: pointer;
+    cursor: grab;
     z-index: 9998;
     box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
     display: flex;
@@ -99,8 +99,8 @@
     cursor: pointer;
     color: var(--muted-text);
     transition: background 0.2s, color 0.2s;
-    width: 24px;
-    height: 24px;
+    width: 24px; /* Ensure consistent size */
+    height: 24px; /* Ensure consistent size */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -209,7 +209,24 @@
     border: 1px solid #eafaf1;
     flex-wrap: wrap;
     gap: 12px;
+    transition: background-color 0.3s, border-color 0.3s;
 }
+
+.retailer-price.sweet {
+    background-color: #f0fff0; /* Very light green */
+    border-color: #a3e9a3; /* Light green */
+}
+
+.retailer-price.meh {
+    background-color: #fffef0; /* Very light yellow */
+    border-color: #ffe9a3; /* Light yellow */
+}
+
+.retailer-price.sour {
+    background-color: #fff0f0; /* Very light red */
+    border-color: #e9a3a3; /* Light red */
+}
+
 .retailer-info {
     display: flex;
     flex-direction: column;
@@ -409,20 +426,21 @@
     display: block;
     width: fit-content;
     margin: 16px auto 0 auto;
-    padding: 10px 20px;
-    background: #eafaf1;
+    padding: 0;
+    background: none;
     color: var(--primary-color-dark);
-    border: 1px solid var(--primary-color);
-    border-radius: 8px;
+    border: none;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+    transition: text-decoration 0.2s;
 }
 
 .show-all-button:hover {
-    background: var(--primary-color);
-    color: white;
+    background: none;
+    color: var(--primary-color-dark);
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {
@@ -437,4 +455,11 @@
     .sweetdill-sidebar-content {
         padding: 12px;
     }
+}
+
+body.sweetdill-no-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 } 
