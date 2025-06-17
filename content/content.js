@@ -168,6 +168,12 @@ class SweetDillContent {
                                 <div class="loading-spinner">Searching for prices...</div>
                             </div>
                         </div>
+                        <div class="price-history">
+                            <h2>Price History</h2>
+                            <div class="chart-container">
+                                <canvas id="price-history-chart"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -425,6 +431,7 @@ class SweetDillContent {
             const { priceResults, coupons } = await this.searchProductPrices(); // Pass empty or dummy values if needed
             
             this.updatePriceComparison(priceResults, coupons);
+            this.renderPriceHistory();
         } catch (error) {
             console.error('SweetDill: Error comparing prices:', error);
             this.showPriceComparisonError();
@@ -599,6 +606,139 @@ class SweetDillContent {
                     toggleCouponsButton.textContent = showingAllCoupons ? 'Show Less Coupons' : 'Show All Coupons';
                 }
             });
+        }
+    }
+
+    async renderPriceHistory() {
+        const priceHistoryContainer = document.querySelector('.price-history .chart-container');
+        if (!priceHistoryContainer) return;
+
+        priceHistoryContainer.innerHTML = '<canvas id="price-history-chart"></canvas>';
+        const canvas = document.getElementById('price-history-chart');
+        if (!canvas) return;
+
+        try {
+            // Chart.js is now loaded via manifest.json as a regular script,
+            // making it available on the window object in the isolated world.
+            const Chart = window.Chart;
+
+            if (!Chart || typeof Chart !== 'function') {
+                throw new Error("Chart.js Chart constructor not found on window object. Ensure chart.umd.min.js is loaded.");
+            }
+
+            const response = await fetch(chrome.runtime.getURL('data/price-history-sample.json'));
+            const data = await response.json();
+
+            if (!Array.isArray(data) || data.length === 0) {
+                console.error('SweetDill: Invalid or empty price history data');
+                priceHistoryContainer.innerHTML = '<div class="error-message">No price history data available.</div>';
+                return;
+            }
+
+            // Sort data by date
+            const sortedData = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Prepare data for Chart.js
+            const chartData = {
+                labels: sortedData.map(item => new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                datasets: [{
+                    label: 'Price History',
+                    data: sortedData.map(item => item.price),
+                    borderColor: '#4CAF50', // Using primary color
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    tension: 0.2, // Slightly less tension for a simpler curve
+                    fill: true,
+                    pointRadius: 3, // Smaller points
+                    pointBackgroundColor: '#4CAF50', // Primary color for points
+                    pointBorderColor: '#fff', // White border for points
+                    pointBorderWidth: 1, // Thinner border
+                    pointHoverRadius: 5, // Slightly larger on hover
+                    pointHoverBackgroundColor: '#333333', // Text color on hover
+                    pointHoverBorderColor: '#fff'
+                }]
+            };
+
+            // Chart configuration
+            const config = {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(51, 51, 51, 0.9)', // Dark grey, slightly translucent
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'transparent',
+                            borderWidth: 0,
+                            padding: 10,
+                            cornerRadius: 4, // Softer corners
+                            displayColors: true, // Display the color box (point style)
+                            usePointStyle: true, // Use the point style in the tooltip
+                            callbacks: {
+                                title: function() { return ''; }, // Remove title for a simpler look
+                                label: function(context) {
+                                    return `Price: ${new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD'
+                                    }).format(context.parsed.y)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: false // Remove X-axis line
+                            },
+                            ticks: {
+                                color: '#333333',
+                                maxRotation: 0,
+                                minRotation: 0,
+                                maxTicksLimit: 7,
+                                padding: 5 // Add padding to labels
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: false // Remove Y-axis line
+                            },
+                            ticks: {
+                                color: '#333333',
+                                callback: function(value) {
+                                    return new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD'
+                                    }).format(value);
+                                },
+                                maxTicksLimit: 7,
+                                padding: 5 // Add padding to labels
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            };
+
+            // Create the chart
+            new Chart(canvas, config);
+
+        } catch (error) {
+            console.error('SweetDill: Error rendering price history chart:', error);
+            priceHistoryContainer.innerHTML = '<div class="error-message">Unable to load price history.</div>';
         }
     }
 

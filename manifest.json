@@ -15,7 +15,7 @@
   "content_scripts": [
     {
       "matches": ["https://*.instacart.com/*"],
-      "js": ["content/content.js"],
+      "js": ["content/chart.umd.min.js", "content/content.js"],
       "css": ["styles/common.css", "styles/sidebar.css"]
     }
   ],
@@ -29,7 +29,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["data/*", "assets/*"],
+      "resources": ["data/*", "assets/*", "content/chart.umd.min.js"],
       "matches": ["https://*.instacart.com/*"]
     }
   ]

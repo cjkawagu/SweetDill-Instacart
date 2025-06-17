@@ -340,6 +340,56 @@
     color: #dc3545; /* Darker red */
 }
 
+/* Price History Styles */
+.price-history {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--divider);
+}
+
+.price-history h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 16px 0;
+}
+
+.chart-container {
+    position: relative;
+    height: 200px; /* Adjust height as needed */
+    width: 100%;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: var(--card-shadow);
+}
+
+/* Chart.js specific overrides for design consistency */
+.chartjs-tooltip {
+    background: rgba(34, 34, 34, 0.9) !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
+    color: #fff !important;
+}
+
+.chartjs-tooltip-header {
+    padding-bottom: 5px !important;
+    margin-bottom: 5px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.chartjs-tooltip-title {
+    font-weight: 600 !important;
+    color: #fff !important;
+}
+
+.chartjs-tooltip-body {
+    font-weight: 400 !important;
+    color: #f0f0f0 !important;
+}
+
 /* Coupon Styles */
 .coupons-section {
     margin-top: 24px;
