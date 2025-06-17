@@ -163,9 +163,14 @@ class SweetDillContent {
                             </div>
                         </div>
                         <div class="price-comparison">
-                            <h2>Price Comparison</h2>
                             <div id="price-comparison-content">
                                 <div class="loading-spinner">Searching for prices...</div>
+                            </div>
+                        </div>
+                        <div class="unit-price-comparison">
+                            <h2>Unit Price Comparison</h2>
+                            <div id="unit-price-comparison-content">
+                                <div class="loading-spinner">Calculating unit prices...</div>
                             </div>
                         </div>
                         <div class="price-history">
@@ -174,6 +179,10 @@ class SweetDillContent {
                                 <canvas id="price-history-chart"></canvas>
                             </div>
                         </div>
+                        <div id="coupon-list-container">
+                            <div class="loading-spinner">Checking for coupons...</div>
+                        </div>
+                        <button id="toggle-coupons-button" class="show-all-button" style="display: none;">Show All Coupons</button>
                     </div>
                     <img src="${chrome.runtime.getURL('assets/sweet_mascot.png')}" alt="SweetDill Mascot" class="sweetdill-mascot-footer">
                 </div>
@@ -419,7 +428,7 @@ class SweetDillContent {
         }
     }
 
-    async startPriceComparison(productSlug, zipcode) {
+    async startPriceComparison() {
         try {
             const comparisonContent = document.getElementById('price-comparison-content');
             if (comparisonContent) {
@@ -427,19 +436,20 @@ class SweetDillContent {
             }
 
             // Load sample data
-            // No need for zipcode or actual retailers as we are using local JSON
-            // const retailers = await this.getNearbyRetailers(zipcode);
-            const { priceResults, coupons } = await this.searchProductPrices(); // Pass empty or dummy values if needed
+            const { priceResults, coupons } = await this.searchProductPrices();
             
-            this.updatePriceComparison(priceResults, coupons);
+            this.updatePriceComparison(priceResults);
+            this.fetchAndRenderUnitPriceComparison();
             this.renderPriceHistory();
+            this.renderCoupons(coupons);
+
         } catch (error) {
             console.error('SweetDill: Error comparing prices:', error);
             this.showPriceComparisonError();
         }
     }
 
-    updatePriceComparison(priceResults, coupons) {
+    updatePriceComparison(priceResults) {
         const comparisonContent = document.getElementById('price-comparison-content');
         if (!comparisonContent) return;
 
@@ -512,50 +522,13 @@ class SweetDillContent {
         const initialRetailers = validResults.slice(0, initialRetailerDisplayLimit);
         const moreRetailersExist = validResults.length > initialRetailerDisplayLimit;
 
-        // Create HTML for coupons
-        // Sort coupons: prioritize by lowest minimum purchase, then by earliest expiration
-        const sortedCoupons = [...coupons].sort((a, b) => {
-            if (a.minimumPurchase !== b.minimumPurchase) {
-                return a.minimumPurchase - b.minimumPurchase;
-            }
-            return new Date(a.expires).getTime() - new Date(b.expires).getTime();
-        });
-
-        const initialCouponDisplayLimit = 3;
-        const initialCoupons = sortedCoupons.slice(0, initialCouponDisplayLimit);
-        const moreCouponsExist = sortedCoupons.length > initialCouponDisplayLimit;
-
-        const couponHtml = (visibleCoupons) => visibleCoupons.length > 0 ? `
-            <div class="coupons-section">
-                <h2>Available Coupons</h2>
-                ${visibleCoupons.map(coupon => `
-                    <div class="coupon-card">
-                        <div class="coupon-info">
-                            <h3>${coupon.description}</h3>
-                            <p class="coupon-summary">${coupon.aiSummary}</p>
-                            <p class="coupon-details">
-                                Min. purchase: ${this.formatPrice(coupon.minimumPurchase)} • 
-                                Expires: ${new Date(coupon.expires).toLocaleDateString()}
-                            </p>
-                        </div>
-                        <div class="coupon-code" data-code="${coupon.code}">
-                            <span>${coupon.code}</span>
-                            <button class="copy-button" title="Copy to clipboard">Copy</button>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        ` : '';
-
-        // Combine both sections
+        // Remove coupon-related HTML rendering from here
         comparisonContent.innerHTML = `
             <div class="price-comparison-section">
                 <h2>Price Comparison</h2>
                 <div id="retailer-list">${priceHtml(initialRetailers)}</div>
                 ${moreRetailersExist ? `<button id="toggle-retailers-button" class="show-all-button">Show All Retailers</button>` : ''}
             </div>
-            <div id="coupon-list-container">${couponHtml(initialCoupons)}</div>
-            ${moreCouponsExist ? `<button id="toggle-coupons-button" class="show-all-button">Show All Coupons</button>` : ''}
         `;
 
         // Add event listeners to view buttons
@@ -564,20 +537,6 @@ class SweetDillContent {
             button.addEventListener('click', () => {
                 const retailerId = button.dataset.retailer;
                 this.redirectToRetailer(retailerId);
-            });
-        });
-
-        // Add event listeners to copy buttons
-        const copyButtons = comparisonContent.querySelectorAll('.copy-button');
-        copyButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                const couponCode = e.target.closest('.coupon-code').dataset.code;
-                navigator.clipboard.writeText(couponCode).then(() => {
-                    button.textContent = 'Copied!';
-                    setTimeout(() => {
-                        button.textContent = 'Copy';
-                    }, 2000);
-                });
             });
         });
 
@@ -591,20 +550,6 @@ class SweetDillContent {
                 if (retailerList) {
                     retailerList.innerHTML = priceHtml(showingAllRetailers ? validResults : initialRetailers);
                     toggleRetailersButton.textContent = showingAllRetailers ? 'Show Less Retailers' : 'Show All Retailers';
-                }
-            });
-        }
-
-        // Add event listener for "Show All / Show Less Coupons" button
-        const toggleCouponsButton = document.getElementById('toggle-coupons-button');
-        if (toggleCouponsButton) {
-            let showingAllCoupons = false;
-            toggleCouponsButton.addEventListener('click', () => {
-                showingAllCoupons = !showingAllCoupons;
-                const couponListContainer = document.getElementById('coupon-list-container');
-                if (couponListContainer) {
-                    couponListContainer.innerHTML = couponHtml(showingAllCoupons ? sortedCoupons : initialCoupons);
-                    toggleCouponsButton.textContent = showingAllCoupons ? 'Show Less Coupons' : 'Show All Coupons';
                 }
             });
         }
@@ -767,6 +712,150 @@ class SweetDillContent {
         if (currentDealIndicatorElement) {
             currentDealIndicatorElement.className = 'deal-rating-box meh';
             currentDealIndicatorElement.innerHTML = '❓ N/A';
+        }
+    }
+
+    async fetchAndRenderUnitPriceComparison() {
+        const unitComparisonContent = document.getElementById('unit-price-comparison-content');
+        if (!unitComparisonContent) return;
+
+        unitComparisonContent.innerHTML = '<div class="loading-spinner">Calculating unit prices...</div>';
+
+        try {
+            const response = await fetch(chrome.runtime.getURL('data/unit-price-comparison-sample.json'));
+            const data = await response.json();
+
+            if (!Array.isArray(data) || data.length === 0) {
+                unitComparisonContent.innerHTML = '<div class="error-message">No unit price data available.</div>';
+                return;
+            }
+
+            let bestUnitPrice = Infinity;
+            let bestUnitPriceItem = null;
+
+            const itemsWithUnitPrice = data.map(item => {
+                const unitPrice = item.total_price / item.unit_value;
+                if (unitPrice < bestUnitPrice) {
+                    bestUnitPrice = unitPrice;
+                    bestUnitPriceItem = item;
+                }
+                return { ...item, unitPrice };
+            });
+
+            // Sort by unit price for display
+            itemsWithUnitPrice.sort((a, b) => a.unitPrice - b.unitPrice);
+
+            const html = `
+                <div class="unit-price-list">
+                    ${itemsWithUnitPrice.map(item => {
+                        const isBestValue = item === bestUnitPriceItem;
+                        const isCurrentProduct = item.is_current_product;
+                        return `
+                            <div class="unit-price-item ${isBestValue ? 'best-value' : ''} ${isCurrentProduct ? 'current-product' : ''}">
+                                <div class="size-info">
+                                    <span class="size-description">${item.size_description}</span>
+                                    ${isCurrentProduct ? '<span class="current-label"> (Current Size)</span>' : ''}
+                                </div>
+                                <div class="unit-price-controls">
+                                    <div class="price-info">
+                                        <span class="unit-price-value">${this.formatPrice(item.unitPrice)}/${item.unit}</span>
+                                        <span class="total-price">(${this.formatPrice(item.total_price)})</span>
+                                    </div>
+                                    <div class="actions">
+                                        <button class="view-size-button" data-url="${item.url}">View</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            unitComparisonContent.innerHTML = html;
+
+            // Add event listeners for view buttons
+            const viewSizeButtons = unitComparisonContent.querySelectorAll('.view-size-button');
+            viewSizeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const url = button.dataset.url;
+                    if (url) {
+                        window.open(url, '_blank');
+                    }
+                });
+            });
+
+        } catch (error) {
+            console.error('SweetDill: Error fetching or rendering unit price comparison:', error);
+            unitComparisonContent.innerHTML = '<div class="error-message">Unable to compare unit prices.</div>';
+        }
+    }
+
+    // New function to render coupons
+    renderCoupons(coupons) {
+        const couponListContainer = document.getElementById('coupon-list-container');
+        if (!couponListContainer) return;
+
+        // Sort coupons: prioritize by lowest minimum purchase, then by earliest expiration
+        const sortedCoupons = [...coupons].sort((a, b) => {
+            if (a.minimumPurchase !== b.minimumPurchase) {
+                return a.minimumPurchase - b.minimumPurchase;
+            }
+            return new Date(a.expires).getTime() - new Date(b.expires).getTime();
+        });
+
+        const initialCouponDisplayLimit = 3;
+        const initialCoupons = sortedCoupons.slice(0, initialCouponDisplayLimit);
+        const moreCouponsExist = sortedCoupons.length > initialCouponDisplayLimit;
+
+        const couponHtml = (visibleCoupons) => visibleCoupons.length > 0 ? `
+            <div class="coupons-section">
+                <h2>Available Coupons</h2>
+                ${visibleCoupons.map(coupon => `
+                    <div class="coupon-card">
+                        <div class="coupon-info">
+                            <h3>${coupon.description}</h3>
+                            <p class="coupon-summary">${coupon.aiSummary}</p>
+                            <p class="coupon-details">
+                                Min. purchase: ${this.formatPrice(coupon.minimumPurchase)} • 
+                                Expires: ${new Date(coupon.expires).toLocaleDateString()}
+                            </p>
+                        </div>
+                        <div class="coupon-code" data-code="${coupon.code}">
+                            <span>${coupon.code}</span>
+                            <button class="copy-button" title="Copy to clipboard">Copy</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        ` : '';
+
+        couponListContainer.innerHTML = couponHtml(initialCoupons);
+
+        // Add event listeners to copy buttons
+        const copyButtons = couponListContainer.querySelectorAll('.copy-button');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const couponCode = e.target.closest('.coupon-code').dataset.code;
+                navigator.clipboard.writeText(couponCode).then(() => {
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = 'Copy';
+                    }, 2000);
+                });
+            });
+        });
+
+        // Add event listener for "Show All / Show Less Coupons" button
+        const toggleCouponsButton = document.getElementById('toggle-coupons-button');
+        if (toggleCouponsButton) {
+            let showingAllCoupons = false;
+            toggleCouponsButton.addEventListener('click', () => {
+                showingAllCoupons = !showingAllCoupons;
+                if (couponListContainer) {
+                    couponListContainer.innerHTML = couponHtml(showingAllCoupons ? sortedCoupons : initialCoupons);
+                    toggleCouponsButton.textContent = showingAllCoupons ? 'Show Less Coupons' : 'Show All Coupons';
+                }
+            });
         }
     }
 }

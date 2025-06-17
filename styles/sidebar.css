@@ -255,7 +255,7 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 2px;
-    min-width: 120px;
+    flex-shrink: 0;
 }
 .price {
     font-size: 18px;
@@ -511,6 +511,111 @@
     transform: translateY(-1px);
 }
 
+/* Unit Price Comparison Styles */
+.unit-price-comparison {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--divider);
+}
+
+.unit-price-comparison h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 16px 0;
+}
+
+.unit-price-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.unit-price-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 4px rgba(39, 174, 96, 0.06);
+    border: 1px solid #eafaf1;
+    transition: transform 0.2s ease-out, box-shadow 0.2s;
+    flex-wrap: nowrap;
+    gap: 15px;
+}
+
+.unit-price-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.12);
+}
+
+.unit-price-item.best-value {
+    background-color: #e6ffe6; /* Light green for best value */
+    border-color: #a3e9a3; /* Primary color border */
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.15);
+}
+
+.unit-price-item.current-product {
+    border-left: 5px solid var(--primary-color);
+}
+
+.size-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.size-description {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 15px;
+}
+
+.current-label {
+    font-size: 12px;
+    color: var(--primary-color-dark);
+    font-weight: 500;
+}
+
+.unit-price-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-color-dark);
+}
+
+.total-price {
+    font-size: 13px;
+    color: var(--muted-text);
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.view-size-button {
+    margin-top: 0;
+    width: auto;
+    min-width: 80px;
+    padding: 8px 12px;
+    background: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s ease-out;
+    box-shadow: 0 1px 4px rgba(39, 174, 96, 0.08);
+    white-space: nowrap;
+}
+
 .sweetdill-mascot-footer {
     display: block;
     width: 24px; /* Make the mascot much smaller, approximately 30% of previous size */
@@ -541,4 +646,12 @@ body.sweetdill-no-select {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+}
+
+.unit-price-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
 } 

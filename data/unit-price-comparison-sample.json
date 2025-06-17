@@ -1,0 +1,38 @@
+[
+  {
+    "product_slug": "sunnyd-citrus-punch-tangy-64-fl-oz",
+    "size_description": "64 fl oz",
+    "total_price": 4.99,
+    "unit": "fl oz",
+    "unit_value": 64,
+    "is_current_product": true,
+    "url": "https://www.instacart.com/store/items/sunnyd-citrus-punch-tangy-64-fl-oz"
+  },
+  {
+    "product_slug": "sunnyd-citrus-punch-tangy-128-fl-oz",
+    "size_description": "128 fl oz",
+    "total_price": 8.99,
+    "unit": "fl oz",
+    "unit_value": 128,
+    "is_current_product": false,
+    "url": "https://www.instacart.com/store/items/sunnyd-citrus-punch-tangy-128-fl-oz"
+  },
+  {
+    "product_slug": "sunnyd-citrus-punch-tangy-20-fl-oz-bottle-6-pack",
+    "size_description": "6-pack (20 fl oz each, total 120 fl oz)",
+    "total_price": 7.50,
+    "unit": "fl oz",
+    "unit_value": 120,
+    "is_current_product": false,
+    "url": "https://www.instacart.com/store/items/sunnyd-citrus-punch-tangy-20-fl-oz-bottle-6-pack"
+  },
+  {
+    "product_slug": "sunnyd-citrus-punch-tangy-gallon",
+    "size_description": "1 Gallon (128 fl oz)",
+    "total_price": 8.79,
+    "unit": "fl oz",
+    "unit_value": 128,
+    "is_current_product": false,
+    "url": "https://www.instacart.com/store/items/sunnyd-citrus-punch-tangy-gallon"
+  }
+] 
