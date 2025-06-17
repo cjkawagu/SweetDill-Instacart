@@ -55,11 +55,13 @@
     font-weight: 600;
     font-size: 14px;
     flex-direction: row;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s ease-out;
 }
 
 .sweetdill-toggle:hover {
     background: var(--primary-color-dark);
     box-shadow: 0 6px 16px rgba(39, 174, 96, 0.25);
+    transform: translateY(-2px);
 }
 
 .sweetdill-toggle-icon {
@@ -98,7 +100,7 @@
     border-radius: 50%;
     cursor: pointer;
     color: var(--muted-text);
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, transform 0.2s ease-out;
     width: 24px; /* Ensure consistent size */
     height: 24px; /* Ensure consistent size */
     display: flex;
@@ -109,6 +111,7 @@
 .header-icon:hover {
     background: #eafaf1;
     color: var(--primary-color-dark);
+    transform: translateY(-2px);
 }
 
 .sweetdill-sidebar-title {
@@ -131,11 +134,12 @@
     font-size: 24px;
     line-height: 1;
     border-radius: 50%;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s, transform 0.2s ease-out;
 }
 .sweetdill-close-button:hover {
     color: var(--primary-color-dark);
     background: #eafaf1;
+    transform: rotate(90deg);
 }
 
 .sweetdill-sidebar-content {
@@ -187,9 +191,9 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #eafaf1;
-    border-radius: 8px;
-    padding: 6px 14px;
+    background: none;
+    border-radius: 0;
+    padding: 0;
     font-size: 18px;
     font-weight: 700;
     color: var(--primary-color-dark);
@@ -209,7 +213,12 @@
     border: 1px solid #eafaf1;
     flex-wrap: wrap;
     gap: 12px;
-    transition: background-color 0.3s, border-color 0.3s;
+    transition: background-color 0.3s, border-color 0.3s, transform 0.2s ease-out, box-shadow 0.2s;
+}
+
+.retailer-price:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.12);
 }
 
 .retailer-price.sweet {
@@ -275,12 +284,13 @@
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.2s ease-out;
     box-shadow: 0 1px 4px rgba(39, 174, 96, 0.08);
     white-space: nowrap;
 }
 .view-button:hover {
     background: var(--button-bg-hover);
+    transform: translateY(-1px);
 }
 
 .loading-spinner {
@@ -312,6 +322,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    transition: transform 0.2s ease-out;
 }
 
 .deal-rating-box.sweet {
@@ -350,6 +361,12 @@
     padding: 16px;
     margin-bottom: 16px;
     box-shadow: var(--card-shadow);
+    transition: transform 0.2s ease-out, box-shadow 0.2s;
+}
+
+.coupon-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(39, 174, 96, 0.1);
 }
 
 .coupon-info {
@@ -403,11 +420,12 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.2s ease-out;
 }
 
 .copy-button:hover {
     background: var(--primary-color-dark);
+    transform: translateY(-1px);
 }
 
 /* Price Comparison Section */
@@ -434,13 +452,14 @@
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    transition: text-decoration 0.2s;
+    transition: text-decoration 0.2s, transform 0.2s ease-out;
 }
 
 .show-all-button:hover {
     background: none;
     color: var(--primary-color-dark);
     text-decoration: underline;
+    transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
