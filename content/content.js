@@ -175,6 +175,7 @@ class SweetDillContent {
                             </div>
                         </div>
                     </div>
+                    <img src="${chrome.runtime.getURL('assets/sweet_mascot.png')}" alt="SweetDill Mascot" class="sweetdill-mascot-footer">
                 </div>
             </div>
             <div class="sweetdill-toggle">

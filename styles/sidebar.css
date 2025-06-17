@@ -506,16 +506,26 @@
 }
 
 .show-all-button:hover {
-    background: none;
-    color: var(--primary-color-dark);
-    text-decoration: underline;
+    background-color: var(--primary-color-dark);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.25);
     transform: translateY(-1px);
+}
+
+.sweetdill-mascot-footer {
+    display: block;
+    width: 24px; /* Make the mascot much smaller, approximately 30% of previous size */
+    height: auto;
+    margin: 20px auto 10px auto; /* Center it and add vertical spacing */
+}
+
+.sweetdill-mascot-footer:hover {
+    opacity: 1;
 }
 
 @media (max-width: 768px) {
     .sweetdill-sidebar {
-        width: 100%;
-        max-width: none;
+        width: 100vw;
+        max-width: 100vw;
         border-radius: 0;
     }
     .sweetdill-toggle-text {
