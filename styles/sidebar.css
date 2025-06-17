@@ -29,7 +29,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    border-radius: 0 0 0 24px;
+    border-radius: 0;
 }
 
 .sweetdill-sidebar.open {
@@ -506,9 +506,12 @@
 }
 
 .show-all-button:hover {
-    background-color: var(--primary-color-dark);
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.25);
-    transform: translateY(-1px);
+    background: none;
+    box-shadow: none;
+    color: var(--primary-color-dark);
+    font-weight: 700;
+    text-decoration: none;
+    transform: none;
 }
 
 /* Unit Price Comparison Styles */

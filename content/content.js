@@ -549,9 +549,11 @@ class SweetDillContent {
                 const retailerList = document.getElementById('retailer-list');
                 if (retailerList) {
                     retailerList.innerHTML = priceHtml(showingAllRetailers ? validResults : initialRetailers);
-                    toggleRetailersButton.textContent = showingAllRetailers ? 'Show Less Retailers' : 'Show All Retailers';
+                    toggleRetailersButton.textContent = showingAllRetailers ? 'Show Less' : 'Show More';
                 }
             });
+            // Set initial button text
+            toggleRetailersButton.textContent = 'Show More';
         }
     }
 
